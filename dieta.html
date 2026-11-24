@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="dieta-icon.png">
 <style>
-:root{color-scheme:light dark;--bg:#fafaf8;--tx:#111;--mu:#8a8a85;--bd:#e8e8e4;--rd:#b3261e;--gr:#2e7d4f}
-@media(prefers-color-scheme:dark){:root{--bg:#0e0e0e;--tx:#ededea;--mu:#7d7d78;--bd:#242422;--rd:#e5776f;--gr:#6fc08f}}
+:root{color-scheme:light dark;--bg:#fafaf8;--tx:#111;--mu:#8a8a85;--bd:#e8e8e4;--rd:#b3261e;--gr:#2e7d4f;--yl:#c99700}
+@media(prefers-color-scheme:dark){:root{--bg:#0e0e0e;--tx:#ededea;--mu:#7d7d78;--bd:#242422;--rd:#e5776f;--gr:#6fc08f;--yl:#e6b422}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--tx);font:400 16px/1.4 -apple-system,system-ui,Helvetica,Arial,sans-serif}
 body{padding:calc(env(safe-area-inset-top,0px) + 20px) 24px calc(env(safe-area-inset-bottom,0px) + 90px)}
@@ -49,6 +49,15 @@ svg{width:100%;height:auto;display:block}
 svg text{fill:var(--mu);font-size:9px;font-family:inherit}
 .b0{fill:var(--mu);opacity:.4}.b1{fill:var(--tx)}
 .ln{fill:none;stroke:var(--tx);stroke-width:1.5}.dt{fill:var(--tx)}
+.bad{color:var(--rd)}.ok{color:var(--gr)}.wn{color:var(--yl)}
+.cal{height:10px;background:var(--bd);border-radius:5px;overflow:hidden;margin-top:14px}
+.cal i{display:block;height:100%;border-radius:5px;transition:width .3s}
+.cg{background:var(--gr)}.cy{background:var(--yl)}.cr{background:var(--rd)}
+.hotc{border-left:3px solid var(--rd);padding-left:14px}
+.sc{display:flex;height:10px;border-radius:5px;overflow:hidden}
+.sc i{display:block;height:100%}
+u.mk{position:absolute;top:-5px;width:4px;height:20px;background:var(--tx);border-radius:2px;margin-left:-2px;text-decoration:none}
+.tk{position:absolute;font-size:10px;color:var(--mu);transform:translateX(-50%);top:4px}
 .hid{display:none}
 </style></head><body>
 <div id="v-oggi"></div><div id="v-sett" class="hid"></div><div id="v-peso" class="hid"></div><div id="v-dati" class="hid"></div>
@@ -58,8 +67,9 @@ svg text{fill:var(--mu);font-size:9px;font-family:inherit}
 var MESI=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
 var GG=['','lun','mar','mer','gio','ven','sab','dom'];
 var P={c:'Colazione',p:'Pranzo',z:'Cena',s:'Spuntino'},PO=['c','p','z','s'];
-var KEY='dieta_v1',db={e:[],a:{},w:{},s:{kcal:'',acq:8,ml:250,pw:''}};
-try{var raw=localStorage.getItem(KEY);if(raw){var x0=JSON.parse(raw);if(x0&&Array.isArray(x0.e)&&x0.a&&x0.w&&x0.s)db=x0}}catch(e){}
+var KEY='dieta_v1',db={e:[],a:{},c:{},w:{},s:{kcal:'',acq:8,ml:250,pw:'',cf:3,h:''}};
+function norm(x){if(x&&Array.isArray(x.e)&&x.a&&x.w&&x.s){x.c=x.c||{};if(x.s.cf==null)x.s.cf=3;if(x.s.h==null)x.s.h='';return x}return null}
+try{var raw=localStorage.getItem(KEY);if(raw){var y0=norm(JSON.parse(raw));if(y0)db=y0}}catch(e){}
 var $=function(s){return document.querySelector(s)};
 var ui={tab:'oggi',form:false,ed:null,pp:'c',wk:null};
 function save(){try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){toast('Salvataggio non riuscito: fai un backup')}}
@@ -78,13 +88,20 @@ function itemsOf(d){return db.e.filter(function(e){return e.d===d})}
 function kcalOf(d){return itemsOf(d).reduce(function(s,e){return s+(+e.k||0)},0)}
 function listDs(){var c={};db.e.forEach(function(e){var v=(e.ds||'').trim();if(v){var k=v.toLowerCase();c[k]=c[k]||{n:v,c:0};c[k].c++}});return Object.keys(c).map(function(k){return c[k]}).sort(function(a,b){return b.c-a.c}).map(function(o){return o.n})}
 
+function bcat(b){return b<18.5?{n:'Sottopeso',c:'wn'}:b<25?{n:'Normopeso (peso forma)',c:'ok'}:b<30?{n:'Sovrappeso',c:'wn'}:{n:b<35?'Obesità di grado I':b<40?'Obesità di grado II':'Obesità di grado III',c:'bad'}}
+function bmiLine(kg){var cm=+db.s.h;if(!(cm>0)||kg==null||kg==='')return '';var b=kg/Math.pow(cm/100,2),c=bcat(b);return '<div class="'+c.c+'" style="margin-top:12px">IMC '+nf(b,1)+' · '+c.n+'</div>'}
+function scale(b){var lo=15,hi=40,pos=function(v){return(v-lo)/(hi-lo)*100},p=Math.min(100,Math.max(0,pos(b)));
+ return '<div style="position:relative;margin-top:24px"><div class="sc"><i style="width:14%;background:var(--yl)"></i><i style="width:26%;background:var(--gr)"></i><i style="width:20%;background:var(--yl)"></i><i style="width:40%;background:var(--rd)"></i></div><u class="mk" style="left:'+p+'%"></u></div><div style="position:relative;height:18px"><span class="tk" style="left:'+pos(18.5)+'%">18,5</span><span class="tk" style="left:'+pos(25)+'%">25</span><span class="tk" style="left:'+pos(30)+'%">30</span></div>'}
+
 /* ---- GIORNO ---- */
 function formPasto(){return '<div class="card"><h2>'+(ui.ed!=null?'Modifica':'Aggiungi')+'</h2><label>Pasto</label><select id="fp">'+PO.map(function(p){return'<option value="'+p+'">'+P[p]+'</option>'}).join('')+'</select><label>Cosa hai mangiato</label><input id="fs" list="dl-ds" autocomplete="off" placeholder="es. Pasta al pomodoro"><label>Calorie (facoltative)</label><input id="fk" inputmode="decimal" placeholder="kcal"><label>Nota</label><input id="fn"><button class="btn" id="sm">Salva</button>'+(ui.ed!=null?'<button class="btn d" id="dm">Elimina</button>':'')+'<button class="btn s" id="cm">Annulla</button><datalist id="dl-ds">'+listDs().map(function(v){return'<option value="'+esc(v)+'">'}).join('')+'</datalist></div>'}
 function fillPasto(){var x=null;if(ui.ed!=null)x=db.e.filter(function(e){return e.id===ui.ed})[0];x=x||{p:ui.pp};$('#fp').value=x.p;$('#fs').value=x.ds||'';$('#fk').value=x.k==null?'':x.k;$('#fn').value=x.n||''}
 function renderOggi(){var its=itemsOf(cur),tot=kcalOf(cur),has=its.some(function(e){return e.k!==''&&e.k!=null}),g=db.a[cur]||0,S=db.s,h='';
  h+='<div class="nav"><button class="ib" data-d="-1">‹</button><b>'+lab(cur)+'</b><button class="ib" data-d="1">›</button></div>';
  h+='<div class="card"><div class="mu">'+(has?'Calorie registrate':'Voci registrate')+'</div><div class="big">'+(has?nf(tot,0):its.length)+(has?' <span style="font-size:20px;color:var(--mu)">kcal</span>':'')+'</div>';
- if(has&&S.kcal)h+='<div class="bar"><i style="width:'+Math.min(100,tot/S.kcal*100)+'%"></i></div><div class="mu" style="margin-top:8px">Obiettivo: '+nf(+S.kcal,0)+' kcal</div>';
+ var mx=+S.kcal||0,pc=mx?tot/mx:0,cc=pc>1?'cr':pc>=.8?'cy':'cg';
+ if(mx)h+='<div class="cal"><i class="'+cc+'" style="width:'+Math.min(100,pc*100)+'%"></i></div><div class="mu" style="margin-top:8px">'+(tot>mx?'<span class="bad">oltre il massimo di '+nf(tot-mx,0)+' kcal</span>':'restano '+nf(mx-tot,0)+' kcal')+' · massimo '+nf(mx,0)+' kcal al giorno</div>';
+ else h+='<div class="mu" style="margin-top:8px">Imposta il massimo giornaliero nella scheda Dati.</div>';
  h+='</div>';
  if(ui.form)h+=formPasto();
  PO.forEach(function(p){var a=its.filter(function(e){return e.p===p}),k=a.reduce(function(s,e){return s+(+e.k||0)},0);
@@ -93,12 +110,14 @@ function renderOggi(){var its=itemsOf(cur),tot=kcalOf(cur),has=its.some(function
   a.forEach(function(e){h+='<div class="row tap" data-ee="'+e.id+'"><div class="l"><div>'+esc(e.ds)+'</div>'+(e.n?'<div class="mu">'+esc(e.n)+'</div>':'')+'</div><div class="r">'+(e.k!==''&&e.k!=null?nf(+e.k,0)+' kcal':'')+'</div></div>'});
   h+='</div>'});
  h+='<div class="card"><h2>Acqua</h2><div class="step"><button data-aq="-1">−</button><b>'+g+'</b><button data-aq="1">+</button></div><div class="mu" style="margin-top:10px">'+(S.acq?'su '+S.acq+' bicchieri · ':'')+nf(g*S.ml/1000,2)+' litri ('+S.ml+' ml a bicchiere)</div></div>';
- h+='<div class="card"><h2>Peso del giorno</h2><input id="pw" inputmode="decimal" placeholder="kg" value="'+(db.w[cur]!=null?String(db.w[cur]).replace('.',','):'')+'"><button class="btn s" id="sw">Salva peso</button></div>';
+ var cf=db.c[cur]||0,CF=+S.cf||0,hot=CF>0&&cf>=CF;
+ h+='<div class="card'+(hot?' hotc':'')+'"><h2'+(hot?' class="bad"':'')+'>Caffè</h2><div class="step"><button data-cq="-1">−</button><b class="'+(hot?'bad':'')+'">'+cf+'</b><button data-cq="1">+</button></div><div class="'+(hot?'bad':'mu')+'" style="margin-top:10px;font-size:13px">'+(CF?(hot?'Hai raggiunto il limite di '+CF+' caffè al giorno':'Limite impostato: '+CF+' al giorno'):'Nessun limite impostato (scheda Dati)')+'</div></div>';
+ h+='<div class="card"><h2>Peso del giorno</h2><input id="pw" inputmode="decimal" placeholder="kg" value="'+(db.w[cur]!=null?String(db.w[cur]).replace('.',','):'')+'"><button class="btn s" id="sw">Salva peso</button>'+bmiLine(db.w[cur])+'</div>';
  $('#v-oggi').innerHTML=h;if(ui.form)fillPasto()}
 
 /* ---- SETTIMANA ---- */
 function renderSett(){var base=ui.wk||cur,mon=dn(base)-wd(base)+1,days=[],h='';
- for(var i=0;i<7;i++){var d=fromDn(mon+i);days.push({d:d,k:kcalOf(d),n:itemsOf(d).length,a:db.a[d]||0})}
+ for(var i=0;i<7;i++){var d=fromDn(mon+i);days.push({d:d,k:kcalOf(d),n:itemsOf(d).length,a:db.a[d]||0,c:db.c[d]||0})}
  var useK=days.some(function(x){return x.k>0}),mx=Math.max.apply(null,days.map(function(x){return useK?x.k:x.n}))||1;
  h+='<div class="nav"><button class="ib" data-w="-1">‹</button><b>'+(+days[0].d.slice(8))+' '+MESI[+days[0].d.slice(5,7)-1]+' – '+(+days[6].d.slice(8))+' '+MESI[+days[6].d.slice(5,7)-1]+'</b><button class="ib" data-w="1">›</button></div>';
  var W=340,H=140,Pd=10,bw=(W-2*Pd)/7,s='<svg viewBox="0 0 '+W+' '+H+'">';
@@ -108,27 +127,32 @@ function renderSett(){var base=ui.wk||cur,mon=dn(base)-wd(base)+1,days=[],h='';
   s+='<text x="'+(X+bw*.32).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle">'+GG[i+1]+' '+(+x.d.slice(8))+'</text>'});
  h+='<div class="card"><h2>'+(useK?'Calorie al giorno':'Voci al giorno')+'</h2>'+s+'</svg></div>';
  var dk=days.filter(function(x){return x.k>0}),da=days.filter(function(x){return x.a>0}),dr=days.filter(function(x){return x.n>0});
- h+='<div class="card"><div class="g"><div><b>'+dr.length+' / 7</b><span>giorni registrati</span></div><div><b>'+(dk.length?nf(dk.reduce(function(s,x){return s+x.k},0)/dk.length,0):'–')+'</b><span>kcal medie</span></div><div><b>'+(da.length?nf(da.reduce(function(s,x){return s+x.a},0)/da.length,1):'–')+'</b><span>bicchieri medi</span></div><div><b>'+days.reduce(function(s,x){return s+x.n},0)+'</b><span>voci totali</span></div></div></div>';
+ h+='<div class="card"><div class="g"><div><b>'+dr.length+' / 7</b><span>giorni registrati</span></div><div><b>'+(dk.length?nf(dk.reduce(function(s,x){return s+x.k},0)/dk.length,0):'–')+'</b><span>kcal medie</span></div><div><b>'+(da.length?nf(da.reduce(function(s,x){return s+x.a},0)/da.length,1):'–')+'</b><span>bicchieri medi</span></div><div><b>'+(days.some(function(x){return x.c>0})?nf(days.reduce(function(s,x){return s+x.c},0)/days.filter(function(x){return x.c>0}).length,1):'–')+'</b><span>caffè al giorno</span></div></div></div>';
  var freq={};db.e.filter(function(e){return e.d>=days[0].d&&e.d<=days[6].d}).forEach(function(e){var k=e.ds.trim().toLowerCase();freq[k]=freq[k]||{n:e.ds.trim(),c:0};freq[k].c++});
  var fl=Object.keys(freq).map(function(k){return freq[k]}).sort(function(a,b){return b.c-a.c}).slice(0,6);
  h+='<div class="card"><h2>Più frequenti</h2>'+(fl.length?fl.map(function(o){return'<div class="row"><span>'+esc(o.n)+'</span><span class="mu">×'+o.c+'</span></div>'}).join(''):'<div class="mu">Nessun dato.</div>')+'</div>';
  $('#v-sett').innerHTML=h}
 
 /* ---- PESO ---- */
-function renderPeso(){var ks=Object.keys(db.w).sort(),h='';
- if(!ks.length){$('#v-peso').innerHTML='<div class="card"><h2>Peso</h2><div class="mu">Nessun peso registrato. Inseriscilo dalla scheda Giorno.</div></div>';return}
+function renderPeso(){var ks=Object.keys(db.w).sort(),h='',cm=+db.s.h;
+ h+='<div class="card"><h2>Altezza e IMC</h2><label style="margin-top:0">Altezza (cm)</label><input id="hh" inputmode="numeric" placeholder="es. 175" value="'+(cm>0?cm:'')+'"><button class="btn s" id="sh">Salva altezza</button>';
+ if(cm>0&&ks.length){var lw=db.w[ks[ks.length-1]],m=cm/100,b0=lw/(m*m),c0=bcat(b0);
+  h+='<div style="margin-top:26px"><div class="mu">IMC con l\'ultimo peso ('+nf(lw,1)+' kg)</div><div class="big '+c0.c+'">'+nf(b0,1)+'</div><div class="'+c0.c+'">'+c0.n+'</div></div>'+scale(b0)+'<div class="mu" style="margin-top:6px"><span class="ok">Verde</span>: peso forma · <span class="wn">Giallo</span>: fuori peso (sotto o sopra) · <span class="bad">Rosso</span>: obesità</div><div class="mu" style="margin-top:12px">Peso forma per la tua altezza: '+nf(18.5*m*m,1)+'–'+nf(24.9*m*m,1)+' kg</div>'}
+ else h+='<div class="mu" style="margin-top:14px">'+(cm>0?'Inserisci il peso dalla scheda Giorno per vedere l\'IMC.':'Inserisci la tua altezza per calcolare l\'IMC.')+'</div>';
+ h+='<div class="mu" style="margin-top:12px">Classificazione OMS per adulti. L\'IMC è solo un indicatore: non vale per ragazzi, in gravidanza o per chi ha molta massa muscolare. Per valutazioni sulla salute chiedi al medico.</div></div>';
+ if(!ks.length){$('#v-peso').innerHTML=h+'<div class="card"><h2>Peso</h2><div class="mu">Nessun peso registrato. Inseriscilo dalla scheda Giorno.</div></div>';return}
  var last=db.w[ks[ks.length-1]],first=db.w[ks[0]],diff=last-first,pw=db.s.pw;
  h+='<div class="card"><div class="mu">Ultimo peso ('+ks[ks.length-1].slice(8)+'/'+ks[ks.length-1].slice(5,7)+')</div><div class="big">'+nf(last,1)+' <span style="font-size:20px;color:var(--mu)">kg</span></div><div class="g" style="margin-top:18px"><div><b>'+(diff>0?'+':diff<0?'−':'')+nf(Math.abs(diff),1)+'</b><span>kg dal primo ('+nf(first,1)+')</span></div>'+(pw?'<div><b>'+nf(Math.abs(last-pw),1)+'</b><span>kg '+(last>pw?'sopra':last<pw?'sotto':'a')+' l\'obiettivo ('+nf(+pw,1)+')</span></div>':'')+'</div></div>';
  var pts=ks.slice(-60),vs=pts.map(function(k){return db.w[k]}),mn=Math.min.apply(null,vs)-.5,mx=Math.max.apply(null,vs)+.5,W=340,H=150,Pd=14,t0=dn(pts[0]),t1=dn(pts[pts.length-1])||t0+1,span=Math.max(1,t1-t0);
- var xy=pts.map(function(k){return[Pd+(dn(k)-t0)/span*(W-2*Pd),H-24-(db.w[k]-mn)/(mx-mn)*(H-44)]}),s='<svg viewBox="0 0 '+W+' '+H+'"><polyline class="ln" points="'+xy.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' ')+'"/>';
- xy.forEach(function(p){s+='<circle class="dt" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.2"/>'});
- s+='<text x="'+Pd+'" y="'+(H-6)+'">'+pts[0].slice(8)+'/'+pts[0].slice(5,7)+'</text><text x="'+(W-Pd)+'" y="'+(H-6)+'" text-anchor="end">'+pts[pts.length-1].slice(8)+'/'+pts[pts.length-1].slice(5,7)+'</text><text x="'+Pd+'" y="10">'+nf(mx,1)+'</text><text x="'+Pd+'" y="'+(H-28)+'">'+nf(mn,1)+'</text></svg>';
- h+='<div class="card"><h2>Andamento</h2>'+s+'</div><div class="card"><h2>Registro ('+ks.length+')</h2>';
+ var xy=pts.map(function(k){return[Pd+(dn(k)-t0)/span*(W-2*Pd),H-24-(db.w[k]-mn)/(mx-mn)*(H-44)]}),sv='<svg viewBox="0 0 '+W+' '+H+'"><polyline class="ln" points="'+xy.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1)}).join(' ')+'"/>';
+ xy.forEach(function(p){sv+='<circle class="dt" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.2"/>'});
+ sv+='<text x="'+Pd+'" y="'+(H-6)+'">'+pts[0].slice(8)+'/'+pts[0].slice(5,7)+'</text><text x="'+(W-Pd)+'" y="'+(H-6)+'" text-anchor="end">'+pts[pts.length-1].slice(8)+'/'+pts[pts.length-1].slice(5,7)+'</text><text x="'+Pd+'" y="10">'+nf(mx,1)+'</text><text x="'+Pd+'" y="'+(H-28)+'">'+nf(mn,1)+'</text></svg>';
+ h+='<div class="card"><h2>Andamento</h2>'+sv+'</div><div class="card"><h2>Registro ('+ks.length+')</h2>';
  ks.slice().reverse().forEach(function(k){h+='<div class="row"><span>'+k.slice(8)+'/'+k.slice(5,7)+'/'+k.slice(0,4)+'</span><span>'+nf(db.w[k],1)+' kg <button class="lk" style="color:var(--mu)" data-dw="'+k+'">✕</button></span></div>'});
  $('#v-peso').innerHTML=h+'</div>'}
 
 /* ---- DATI ---- */
-function renderDati(){var S=db.s;$('#v-dati').innerHTML='<div class="card"><h2>Obiettivi (facoltativi)</h2><div class="mu">Lasciali vuoti se non vuoi un obiettivo. Se hai una dieta indicata da un medico o da un dietista, usa i valori che ti ha dato.</div><label>Calorie al giorno</label><input id="s1" inputmode="numeric" value="'+(S.kcal===''?'':S.kcal)+'"><label>Bicchieri d\'acqua al giorno</label><input id="s2" inputmode="numeric" value="'+(S.acq===''?'':S.acq)+'"><label>Millilitri per bicchiere</label><input id="s3" inputmode="numeric" value="'+S.ml+'"><label>Peso obiettivo (kg)</label><input id="s4" inputmode="decimal" value="'+(S.pw===''?'':String(S.pw).replace('.',','))+'"><button class="btn s" id="ss">Salva obiettivi</button></div><div class="card"><h2>Backup</h2><div class="mu">I dati restano solo su questo telefono. Fai ogni tanto un backup e salvalo nell\'app File.</div><button class="btn s" id="ex">Esporta backup (.json)</button><button class="btn s" id="im">Importa backup</button><input type="file" id="fi2" accept=".json,application/json" class="hid"></div><div class="card"><button class="btn d" id="rs">Cancella tutti i dati</button></div><div class="mu" style="text-align:center">'+db.e.length+' voci · '+Object.keys(db.w).length+' pesi</div>'}
+function renderDati(){var S=db.s;$('#v-dati').innerHTML='<div class="card"><h2>Limiti e obiettivi</h2><div class="mu">Lasciali vuoti se non vuoi un limite. Se hai una dieta indicata da un medico o da un dietista, usa i valori che ti ha dato.</div><label>Massimo di calorie al giorno</label><input id="s1" inputmode="numeric" value="'+(S.kcal===''?'':S.kcal)+'"><label>Limite di caffè al giorno (diventa rosso)</label><input id="s5" inputmode="numeric" value="'+(S.cf===''||S.cf==null?'':S.cf)+'"><label>Bicchieri d\'acqua al giorno</label><input id="s2" inputmode="numeric" value="'+(S.acq===''?'':S.acq)+'"><label>Millilitri per bicchiere</label><input id="s3" inputmode="numeric" value="'+S.ml+'"><label>Peso obiettivo (kg)</label><input id="s4" inputmode="decimal" value="'+(S.pw===''?'':String(S.pw).replace('.',','))+'"><button class="btn s" id="ss">Salva obiettivi</button></div><div class="card"><h2>Backup</h2><div class="mu">I dati restano solo su questo telefono. Fai ogni tanto un backup e salvalo nell\'app File.</div><button class="btn s" id="ex">Esporta backup (.json)</button><button class="btn s" id="im">Importa backup</button><input type="file" id="fi2" accept=".json,application/json" class="hid"></div><div class="card"><button class="btn d" id="rs">Cancella tutti i dati</button></div><div class="mu" style="text-align:center">'+db.e.length+' voci · '+Object.keys(db.w).length+' pesi</div>'}
 
 function render(){({oggi:renderOggi,sett:renderSett,peso:renderPeso,dati:renderDati})[ui.tab]()}
 function tab(t){ui.tab=t;['oggi','sett','peso','dati'].forEach(function(x){$('#v-'+x).className=x===t?'':'hid'});document.querySelectorAll('.tabs button').forEach(function(b){b.className=b.dataset.t===t?'on':''});render();window.scrollTo(0,0)}
@@ -147,6 +171,8 @@ document.addEventListener('click',function(e){
  if(d.ee){ui.form=true;ui.ed=+d.ee;renderOggi();return window.scrollTo(0,0)}
  if(d.aq){var g=Math.max(0,(db.a[cur]||0)+ +d.aq);if(g)db.a[cur]=g;else delete db.a[cur];save();return renderOggi()}
  if(d.dw){if(confirm('Eliminare questo peso?')){delete db.w[d.dw];save();renderPeso()}return}
+ if(d.cq){var c=Math.max(0,(db.c[cur]||0)+ +d.cq);if(c)db.c[cur]=c;else delete db.c[cur];save();return renderOggi()}
+ if(t.id==='sh'){var hv=num($('#hh').value);if(hv===''){db.s.h='';save();return renderPeso()}if(!(hv>=100&&hv<=250))return toast('Altezza in cm, es. 175');db.s.h=hv;save();renderPeso();return toast('Altezza salvata ✓')}
  if(t.id==='cm'){ui.form=false;ui.ed=null;return renderOggi()}
  if(t.id==='dm'){if(confirm('Eliminare questa voce?')){db.e=db.e.filter(function(x){return x.id!==ui.ed});save();ui.form=false;ui.ed=null;renderOggi()}return}
  if(t.id==='sm'){var ds=$('#fs').value.trim();if(!ds)return toast('Scrivi cosa hai mangiato');
@@ -154,15 +180,19 @@ document.addEventListener('click',function(e){
   if(ui.ed!=null){var o=db.e.filter(function(y){return y.id===ui.ed})[0];if(o)x.d=o.d}
   db.e=db.e.filter(function(y){return y.id!==x.id});db.e.push(x);save();ui.form=false;ui.ed=null;renderOggi();return toast('Salvato ✓')}
  if(t.id==='sw'){var v=num($('#pw').value);if(v===''){delete db.w[cur];save();return toast('Peso rimosso')}if(!(v>20&&v<400))return toast('Controlla il peso');db.w[cur]=Math.round(v*10)/10;save();return toast('Peso salvato ✓')}
- if(t.id==='ss'){var k=num($('#s1').value),a=num($('#s2').value),m=num($('#s3').value),p=num($('#s4').value);if(!(m>0))return toast('Controlla i millilitri');db.s={kcal:k===''||isNaN(k)?'':k,acq:a===''||isNaN(a)?'':a,ml:m,pw:p===''||isNaN(p)?'':p};save();return toast('Obiettivi salvati ✓')}
+ if(t.id==='ss'){var k=num($('#s1').value),a=num($('#s2').value),m=num($('#s3').value),p=num($('#s4').value),cf=num($('#s5').value);if(!(m>0))return toast('Controlla i millilitri');db.s={kcal:k===''||isNaN(k)?'':k,acq:a===''||isNaN(a)?'':a,ml:m,pw:p===''||isNaN(p)?'':p,cf:cf===''||isNaN(cf)?'':cf,h:db.s.h};save();return toast('Obiettivi salvati ✓')}
  if(t.id==='ex')return dl('backup_dieta_'+today()+'.json','application/json',new Uint8Array(new TextEncoder().encode(JSON.stringify(db))));
  if(t.id==='im')return $('#fi2').click();
- if(t.id==='rs'&&confirm('Cancellare TUTTI i dati? Non si può annullare.')){db={e:[],a:{},w:{},s:db.s};save();renderDati()}
+ if(t.id==='rs'&&confirm('Cancellare TUTTI i dati? Non si può annullare.')){db={e:[],a:{},c:{},w:{},s:db.s};save();renderDati()}
 });
 document.addEventListener('change',function(e){
  if(e.target.id==='fs'){var v=e.target.value.trim().toLowerCase(),k=$('#fk');if(k&&k.value===''){var m=db.e.filter(function(x){return x.ds.trim().toLowerCase()===v&&x.k!==''&&x.k!=null}).sort(function(a,b){return b.id-a.id})[0];if(m)k.value=m.k}return}
  if(e.target.id!=='fi2')return;var f=e.target.files[0];if(!f)return;var r=new FileReader();
- r.onload=function(){try{var x=JSON.parse(r.result);if(!Array.isArray(x.e)||!x.a||!x.w||!x.s)throw 0;if(confirm('Sostituire i dati attuali con il backup ('+x.e.length+' voci)?')){db=x;save();renderDati();toast('Backup ripristinato')}}catch(er){toast('File non valido')}};r.readAsText(f);e.target.value='';
+ r.onload=function(){try{var x=norm(JSON.parse(r.result));if(!x)throw 0;if(confirm('Sostituire i dati attuali con il backup ('+x.e.length+' voci)?')){db=x;save();renderDati();toast('Backup ripristinato')}}catch(er){toast('File non valido')}};r.readAsText(f);e.target.value='';
 });
 renderOggi();
+var lt=today();
+function tick(){var t=today();if(t!==lt){if(cur===lt)cur=t;lt=t;render()}}
+setInterval(tick,30000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden)tick()});
 </script></body></html>
