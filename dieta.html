@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="apple-touch-icon" href="dieta-icon.png">
 <style>
-:root{color-scheme:light dark;--bg:#fafaf8;--tx:#111;--mu:#8a8a85;--bd:#e8e8e4;--rd:#b3261e;--gr:#2e7d4f;--yl:#c99700}
-@media(prefers-color-scheme:dark){:root{--bg:#0e0e0e;--tx:#ededea;--mu:#7d7d78;--bd:#242422;--rd:#e5776f;--gr:#6fc08f;--yl:#e6b422}}
+:root{color-scheme:light dark;--bg:#fafaf8;--tx:#111;--mu:#8a8a85;--bd:#e8e8e4;--rd:#b3261e;--gr:#2e7d4f;--yl:#c99700;--aq:#1ea7e1}
+@media(prefers-color-scheme:dark){:root{--bg:#0e0e0e;--tx:#ededea;--mu:#7d7d78;--bd:#242422;--rd:#e5776f;--gr:#6fc08f;--yl:#e6b422;--aq:#4dc3f5}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--tx);font:400 16px/1.4 -apple-system,system-ui,Helvetica,Arial,sans-serif}
 body{padding:calc(env(safe-area-inset-top,0px) + 20px) 24px calc(env(safe-area-inset-bottom,0px) + 90px)}
@@ -109,7 +109,8 @@ function renderOggi(){var its=itemsOf(cur),tot=kcalOf(cur),has=its.some(function
   if(!a.length)h+='<div class="mu">Niente registrato.</div>';
   a.forEach(function(e){h+='<div class="row tap" data-ee="'+e.id+'"><div class="l"><div>'+esc(e.ds)+'</div>'+(e.n?'<div class="mu">'+esc(e.n)+'</div>':'')+'</div><div class="r">'+(e.k!==''&&e.k!=null?nf(+e.k,0)+' kcal':'')+'</div></div>'});
   h+='</div>'});
- h+='<div class="card"><h2>Acqua</h2><div class="step"><button data-aq="-1">−</button><b>'+g+'</b><button data-aq="1">+</button></div><div class="mu" style="margin-top:10px">'+(S.acq?'su '+S.acq+' bicchieri · ':'')+nf(g*S.ml/1000,2)+' litri ('+S.ml+' ml a bicchiere)</div></div>';
+ var AQ=+S.acq>0?+S.acq:8,fh=146*Math.min(1,g/AQ),fy=(158-fh).toFixed(1),GP='M20 10H100L92 150Q91 158 83 158H37Q29 158 28 150Z';
+ h+='<div class="card"><h2>Acqua</h2><div style="display:flex;align-items:center;gap:20px"><svg viewBox="0 0 120 166" style="width:96px;flex:none"><defs><clipPath id="gc"><path d="'+GP+'"/></clipPath></defs><g clip-path="url(#gc)"><rect x="0" y="'+fy+'" width="120" height="'+fh.toFixed(1)+'" fill="var(--aq)"/>'+(fh>6?'<rect x="0" y="'+fy+'" width="120" height="3" fill="#fff" opacity=".35"/>':'')+'</g><path d="'+GP+'" fill="none" stroke="var(--mu)" stroke-width="2.5" stroke-linejoin="round"/></svg><div style="flex:1"><div class="step" style="gap:12px"><button data-aq="-1">−</button><b style="min-width:44px">'+g+'</b><button data-aq="1">+</button></div><div style="margin-top:14px;font-size:26px;font-weight:300;color:var(--aq)">'+Math.round(g/AQ*100)+'%</div><div class="mu">'+(g>=AQ?'obiettivo raggiunto · ':'')+AQ+' bicchieri · '+nf(g*S.ml/1000,2)+' L</div></div></div></div>';
  var cf=db.c[cur]||0,CF=+S.cf||0,hot=CF>0&&cf>=CF;
  h+='<div class="card'+(hot?' hotc':'')+'"><h2'+(hot?' class="bad"':'')+'>Caffè</h2><div class="step"><button data-cq="-1">−</button><b class="'+(hot?'bad':'')+'">'+cf+'</b><button data-cq="1">+</button></div><div class="'+(hot?'bad':'mu')+'" style="margin-top:10px;font-size:13px">'+(CF?(hot?'Hai raggiunto il limite di '+CF+' caffè al giorno':'Limite impostato: '+CF+' al giorno'):'Nessun limite impostato (scheda Dati)')+'</div></div>';
  h+='<div class="card"><h2>Peso del giorno</h2><input id="pw" inputmode="decimal" placeholder="kg" value="'+(db.w[cur]!=null?String(db.w[cur]).replace('.',','):'')+'"><button class="btn s" id="sw">Salva peso</button>'+bmiLine(db.w[cur])+'</div>';
